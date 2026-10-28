@@ -19,7 +19,7 @@ description: "Implementation tasks for Automated CI Pipeline with GitHub Actions
 
 **Purpose**: Initialize directory structure for GitHub Actions workflows.
 
-- [ ] T001 Create workflow directory `.github/workflows/` at repository root
+- [x] T001 Create workflow directory `.github/workflows/` at repository root
 
 ---
 
@@ -27,7 +27,7 @@ description: "Implementation tasks for Automated CI Pipeline with GitHub Actions
 
 **Purpose**: Validate baseline build and test execution before automating in CI.
 
-- [ ] T002 Execute local baseline `./mvnw clean verify` to ensure all 28 tests and ArchUnit rules pass cleanly
+- [x] T002 Execute local baseline `./mvnw clean verify` to ensure all 28 tests and ArchUnit rules pass cleanly
 
 **Checkpoint**: Foundation ready — baseline tests validated.
 
@@ -41,9 +41,9 @@ description: "Implementation tasks for Automated CI Pipeline with GitHub Actions
 
 ### Implementation for User Story 1
 
-- [ ] T003 [US1] Create `.github/workflows/ci.yml` with triggers (`push` on `main` and feature branches, `pull_request` on `main`) and concurrency settings (`cancel-in-progress: true`)
-- [ ] T004 [US1] Configure checkout (`actions/checkout@v4`) and JDK 21 Temurin with Maven cache (`actions/setup-java@v4`) in `.github/workflows/ci.yml`
-- [ ] T005 [US1] Add Maven wrapper permission step (`chmod +x ./mvnw`) and Maven verification step (`./mvnw --batch-mode clean verify`) in `.github/workflows/ci.yml`
+- [x] T003 [US1] Create `.github/workflows/ci.yml` with triggers (`push` on `main` and feature branches, `pull_request` on `main`) and concurrency settings (`cancel-in-progress: true`)
+- [x] T004 [US1] Configure checkout (`actions/checkout@v4`) and JDK 21 Temurin with Maven cache (`actions/setup-java@v4`) in `.github/workflows/ci.yml`
+- [x] T005 [US1] Add Maven wrapper permission step (`chmod +x ./mvnw`) and Maven verification step (`./mvnw --batch-mode clean verify`) in `.github/workflows/ci.yml`
 
 **Checkpoint**: At this point, User Story 1 is fully functional as the core CI quality gate (MVP).
 
@@ -57,8 +57,8 @@ description: "Implementation tasks for Automated CI Pipeline with GitHub Actions
 
 ### Implementation for User Story 2
 
-- [ ] T006 [US2] Add Docker build smoke test step (`docker build -t product-activation-service:test .`) to `.github/workflows/ci.yml`
-- [ ] T007 [US2] Verify local Docker multi-stage build produces a valid image with exit code 0
+- [x] T006 [US2] Add Docker build smoke test step (`docker build -t product-activation-service:test .`) to `.github/workflows/ci.yml`
+- [x] T007 [US2] Verify local Docker multi-stage build produces a valid image with exit code 0
 
 **Checkpoint**: User Stories 1 and 2 are functional, covering both application verification and container integrity.
 
@@ -72,8 +72,8 @@ description: "Implementation tasks for Automated CI Pipeline with GitHub Actions
 
 ### Implementation for User Story 3
 
-- [ ] T008 [P] [US3] Add GitHub Actions CI workflow status badge at the top of `README.md`
-- [ ] T009 [US3] Add dedicated "Pipeline de CI/CD" section in `README.md` documenting workflow stages and the conceptual cloud deployment roadmap (Artifact Registry, Kubernetes/ECS, GitOps/ArgoCD)
+- [x] T008 [P] [US3] Add GitHub Actions CI workflow status badge at the top of `README.md`
+- [x] T009 [US3] Add dedicated "Pipeline de CI/CD" section in `README.md` documenting workflow stages and the conceptual cloud deployment roadmap (Artifact Registry, Kubernetes/ECS, GitOps/ArgoCD)
 
 **Checkpoint**: All user stories implemented and documented.
 
@@ -83,9 +83,9 @@ description: "Implementation tasks for Automated CI Pipeline with GitHub Actions
 
 **Purpose**: Final validations, YAML schema check, and branch synchronization.
 
-- [ ] T010 Validate `.github/workflows/ci.yml` syntax and schema
-- [ ] T011 Run quickstart verification per `specs/003-ci-pipeline/quickstart.md`
-- [ ] T012 Commit all changes using Conventional Commits and push branch `003-ci-pipeline`
+- [x] T010 Validate `.github/workflows/ci.yml` syntax and schema
+- [x] T011 Run quickstart verification per `specs/003-ci-pipeline/quickstart.md`
+- [x] T012 Commit all changes using Conventional Commits and push branch `003-ci-pipeline`
 
 ---
 

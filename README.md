@@ -1,5 +1,7 @@
 # Customer Product Activation Service
 
+[![CI](https://github.com/choliveira84/deroyque-it-consulting-services/actions/workflows/ci.yml/badge.svg)](https://github.com/choliveira84/deroyque-it-consulting-services/actions/workflows/ci.yml)
+
 Serviço de ativação de produtos de clientes desenvolvido em conformidade com o desafio técnico para **Java Developer Pleno/Sênior** da **Deroyque IT Consulting Services**.
 
 A solução prioriza simplicidade, clareza e separação de responsabilidades (Arquitetura Hexagonal), tratando problemas reais de sistemas distribuídos: concorrência, idempotência, resiliência em integrações externas e tratamento padronizado de erros.
@@ -250,6 +252,45 @@ Uma análise aprofundada está documentada em [docs/production-incident-analysis
 ---
 
 ## 4. Operação em Produção e Cloud
+
+### 4.1 Pipeline de CI/CD (Diferencial)
+
+O projeto conta com automação de **CI (Continuous Integration)** via **GitHub Actions** (`.github/workflows/ci.yml`), garantindo que nenhum código seja integrado à branch principal sem passar pelos quality gates.
+
+#### 1. Pipeline de CI no Repositório (Implementado)
+A cada `push` ou `pull_request` para a branch `main` ou branches de feature:
+1. **Ambiente Isolado**: Runner `ubuntu-latest` com Docker daemon disponível para Testcontainers.
+2. **Ambiente Java**: Setup do Eclipse Temurin JDK 21 com cache automatizado de dependências Maven (`~/.m2/repository`).
+3. **Quality Gates & Testes (`./mvnw clean verify`)**:
+   - Compilação estrita em Java 21.
+   - Execução de testes unitários puros de domínio.
+   - Verificação de conformidade arquitetural com **ArchUnit** (blindando o isolamento do core hexagonal).
+   - Testes de integração de concorrência com PostgreSQL real via **Testcontainers**.
+   - Testes de integração de resiliência e contratos de provedor via **WireMock**.
+   - Testes de documentação e rotas públicas do **OpenAPI / Swagger UI**.
+4. **Smoke Test de Contêiner**: Execução de `docker build` validando a integridade do `Dockerfile` multi-stage.
+5. **Otimização de Concorrência**: Cancelamento automático de builds anteriores obsoletos (`cancel-in-progress: true`) quando novos commits são enviados rapidamente.
+
+#### 2. Roadmap do Pipeline Completo até o Deploy em Produção (Visão Cloud)
+Para um ambiente empresarial de produção em nuvem, o fluxo estende-se para uma esteira de **CD (Continuous Deployment)**:
+```mermaid
+flowchart LR
+    A["Push / PR"] --> B["CI: Build & Testes"]
+    B --> C["CI: ArchUnit & SonarQube"]
+    C --> D["Docker Build & Trivy Scan"]
+    D --> E["Publicação no Registry (ECR / GHCR)"]
+    E --> F["GitOps (ArgoCD / Flux)"]
+    F --> G["Deploy Staging / Produção (K8s / ECS)"]
+```
+1. **Build e Testes (CI)**: Execução de testes unitários, testes de mutação, validação de regras de arquitetura e análise estática de qualidade/segurança (SonarQube e SAST).
+2. **Container Packaging e Vulnerability Scan**: Construção da imagem Docker multi-stage, execução de scan de vulnerabilidades de pacotes e SO (Trivy / Snyk) e assinatura digital da imagem via **Cosign**.
+3. **Publicação no Container Registry**: Envio da imagem para registry seguro (AWS ECR, Google Artifact Registry ou GHCR) versionada por Semantic Versioning (`v1.2.3`) e SHA imutável do commit.
+4. **Deploy Automatizado via GitOps**:
+   - Um repositório de infraestrutura/manifestos (Kustomize ou Helm) é atualizado com a nova tag da imagem.
+   - O **ArgoCD** ou **Flux** detecta a alteração e sincroniza o cluster Kubernetes (EKS / GKE) ou cluster AWS ECS.
+   - Aplicação de estratégia **Canary Release** ou **Blue/Green** com análise de métricas (Prometheus / Datadog) e rollback automatizado em caso de aumento na taxa de erros (HTTP 5xx) ou latência p99.
+
+### 4.2 Arquitetura de Execução e Resiliência em Cloud
 
 - **Dockerfile Multi-Stage**: Imagem baseada em Alpine Linux, utilizando JRE Temurin 21 enxuta, usuário não-root (`appuser`), flags JVM ajustadas para contêineres (`-XX:MaxRAMPercentage=75.0 -XX:+UseG1GC`) e probe de health check integrado.
 - **Execução em Múltiplas Instâncias**:

@@ -58,6 +58,19 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(org.springframework.data.mapping.PropertyReferenceException.class)
+    public ProblemDetail handlePropertyReference(org.springframework.data.mapping.PropertyReferenceException ex) {
+        log.warn("Invalid sort property: {}", ex.getMessage());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                "Invalid sort property: '" + ex.getPropertyName() + "'. For sorting, use query format: 'sort=property,asc' or 'sort=property,desc'."
+        );
+        problem.setType(VALIDATION_TYPE);
+        problem.setTitle("Invalid Sort Property");
+        enrichTraceId(problem);
+        return problem;
+    }
+
     @ExceptionHandler(ActivationNotFoundException.class)
     public ProblemDetail handleNotFound(ActivationNotFoundException ex) {
         log.info("Resource not found: {}", ex.getMessage());

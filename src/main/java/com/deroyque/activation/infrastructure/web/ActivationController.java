@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -142,6 +143,7 @@ public class ActivationController {
                     description = "Paginated list of activation requests",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PaginatedResponseDto.class))
             ),
+            @ApiResponse(responseCode = "400", description = "Invalid query or sort parameter", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class))),
             @ApiResponse(responseCode = "401", description = "Missing or invalid OAuth 2.0 Bearer JWT token", content = @Content),
             @ApiResponse(responseCode = "403", description = "Insufficient scope (requires 'activations:read')", content = @Content)
     })
@@ -150,7 +152,7 @@ public class ActivationController {
             @RequestParam(required = false) String customerId,
             @Parameter(description = "Filter by activation lifecycle status", required = false)
             @RequestParam(required = false) ActivationStatus status,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
 
         Page<ActivationRequest> page = listActivationsUseCase.list(customerId, status, pageable);
 

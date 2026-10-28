@@ -24,9 +24,9 @@ description: "Task list for Customer Product Activation Service implementation"
 
 **Purpose**: Project initialization, build configuration, and architectural boundaries
 
-- [ ] T001 Initialize Maven build configuration `pom.xml` with Java 21, Spring Boot 3.3.x dependencies (Spring Web, Spring Data JPA, Spring Security OAuth2 Resource Server, Spring Boot Actuator, Flyway, PostgreSQL, Testcontainers, WireMock, ArchUnit) and Maven Wrapper scripts (`mvnw`, `mvnw.cmd`, `.mvn/wrapper/`)
-- [ ] T002 [P] Configure environment application properties in `src/main/resources/application.yml` and `src/main/resources/application-test.yml`
-- [ ] T003 [P] Create ArchUnit architecture boundary test suite in `src/test/java/com/deroyque/activation/architecture/ArchitectureRulesTest.java` enforcing Hexagonal Architecture isolation
+- [X] T001 Initialize Maven build configuration `pom.xml` with Java 21, Spring Boot 3.3.x dependencies (Spring Web, Spring Data JPA, Spring Security OAuth2 Resource Server, Spring Boot Actuator, Flyway, PostgreSQL, Testcontainers, WireMock, ArchUnit) and Maven Wrapper scripts (`mvnw`, `mvnw.cmd`, `.mvn/wrapper/`)
+- [X] T002 [P] Configure environment application properties in `src/main/resources/application.yml` and `src/main/resources/application-test.yml`
+- [X] T003 [P] Create ArchUnit architecture boundary test suite in `src/test/java/com/deroyque/activation/architecture/ArchitectureRulesTest.java` enforcing Hexagonal Architecture isolation
 
 ---
 
@@ -36,12 +36,12 @@ description: "Task list for Customer Product Activation Service implementation"
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Create database migration script `src/main/resources/db/migration/V1__init_activation_schema.sql` defining `activation_requests` and `activation_outbox` tables, unique constraints, and query indexes
-- [ ] T005 [P] Implement RFC 9457 Problem Details `@RestControllerAdvice` in `src/main/java/com/deroyque/activation/infrastructure/web/advice/GlobalExceptionHandler.java`
-- [ ] T006 [P] Implement `CorrelationIdFilter` in `src/main/java/com/deroyque/activation/infrastructure/web/filter/CorrelationIdFilter.java` injecting `traceId` into MDC and response headers
-- [ ] T007 [P] Implement Spring Security OAuth 2.0 Resource Server configuration with JWT scope converter in `src/main/java/com/deroyque/activation/infrastructure/security/SecurityConfig.java`
-- [ ] T008 [P] Implement JPA entities `ActivationRequestEntity` and `ActivationOutboxEntity` with `@Version` optimistic locking in `src/main/java/com/deroyque/activation/infrastructure/persistence/entity/`
-- [ ] T009 [P] Implement Spring Data JPA repositories in `src/main/java/com/deroyque/activation/infrastructure/persistence/repository/SpringDataActivationRepository.java` and `SpringDataOutboxRepository.java`
+- [X] T004 Create database migration script `src/main/resources/db/migration/V1__init_activation_schema.sql` defining `activation_requests` and `activation_outbox` tables, unique constraints, and query indexes
+- [X] T005 [P] Implement RFC 9457 Problem Details `@RestControllerAdvice` in `src/main/java/com/deroyque/activation/infrastructure/web/advice/GlobalExceptionHandler.java`
+- [X] T006 [P] Implement `CorrelationIdFilter` in `src/main/java/com/deroyque/activation/infrastructure/web/filter/CorrelationIdFilter.java` injecting `traceId` into MDC and response headers
+- [X] T007 [P] Implement Spring Security OAuth 2.0 Resource Server configuration with JWT scope converter in `src/main/java/com/deroyque/activation/infrastructure/security/SecurityConfig.java`
+- [X] T008 [P] Implement JPA entities `ActivationRequestEntity` and `ActivationOutboxEntity` with `@Version` optimistic locking in `src/main/java/com/deroyque/activation/infrastructure/persistence/entity/`
+- [X] T009 [P] Implement Spring Data JPA repositories in `src/main/java/com/deroyque/activation/infrastructure/persistence/repository/SpringDataActivationRepository.java` and `SpringDataOutboxRepository.java`
 
 **Checkpoint**: Foundation ready - user story implementation can begin
 
@@ -54,15 +54,15 @@ description: "Task list for Customer Product Activation Service implementation"
 **Independent Test**: Submit valid payload to `POST /api/v1/requests` and verify `201 Created` response with valid UUID `id`, `PENDING` status, and `Location` header; submit invalid payload and verify `400 Bad Request` Problem Details.
 
 ### Tests for User Story 1
-- [ ] T010 [P] [US1] Unit test for `ActivationRequest` aggregate creation, validation, and invariants in `src/test/java/com/deroyque/activation/domain/ActivationRequestTest.java`
-- [ ] T011 [P] [US1] Slice test for `POST /api/v1/requests` testing valid payload, validation rejections, and RFC 9457 errors in `src/test/java/com/deroyque/activation/web/ActivationControllerTest.java`
+- [X] T010 [P] [US1] Unit test for `ActivationRequest` aggregate creation, validation, and invariants in `src/test/java/com/deroyque/activation/domain/ActivationRequestTest.java`
+- [X] T011 [P] [US1] Slice test for `POST /api/v1/requests` testing valid payload, validation rejections, and RFC 9457 errors in `src/test/java/com/deroyque/activation/web/ActivationControllerTest.java`
 
 ### Implementation for User Story 1
-- [ ] T012 [P] [US1] Implement domain aggregate `ActivationRequest`, `ActivationStatus`, and domain exceptions in `src/main/java/com/deroyque/activation/domain/model/`
-- [ ] T013 [P] [US1] Implement immutable DTO records `CreateActivationRequestDto` and `ActivationResponseDto` with Bean Validation in `src/main/java/com/deroyque/activation/infrastructure/web/dto/`
-- [ ] T014 [US1] Implement input port `CreateActivationUseCase` and application service `ActivationService.createActivation(...)` in `src/main/java/com/deroyque/activation/application/`
-- [ ] T015 [US1] Implement output port `ActivationRepositoryPort` and persistence adapter `ActivationRepositoryAdapter` in `src/main/java/com/deroyque/activation/infrastructure/persistence/adapter/`
-- [ ] T016 [US1] Implement `POST /api/v1/requests` endpoint in `src/main/java/com/deroyque/activation/infrastructure/web/ActivationController.java` returning `201 Created` and `Location` header
+- [X] T012 [P] [US1] Implement domain aggregate `ActivationRequest`, `ActivationStatus`, and domain exceptions in `src/main/java/com/deroyque/activation/domain/model/`
+- [X] T013 [P] [US1] Implement immutable DTO records `CreateActivationRequestDto` and `ActivationResponseDto` with Bean Validation in `src/main/java/com/deroyque/activation/infrastructure/web/dto/`
+- [X] T014 [US1] Implement input port `CreateActivationUseCase` and application service `ActivationService.createActivation(...)` in `src/main/java/com/deroyque/activation/application/`
+- [X] T015 [US1] Implement output port `ActivationRepositoryPort` and persistence adapter `ActivationRepositoryAdapter` in `src/main/java/com/deroyque/activation/infrastructure/persistence/adapter/`
+- [X] T016 [US1] Implement `POST /api/v1/requests` endpoint in `src/main/java/com/deroyque/activation/infrastructure/web/ActivationController.java` returning `201 Created` and `Location` header
 
 **Checkpoint**: User Story 1 is functional as an independent MVP increment
 
@@ -75,11 +75,11 @@ description: "Task list for Customer Product Activation Service implementation"
 **Independent Test**: Run multi-threaded parallel submissions of identical `externalId` against Testcontainers PostgreSQL asserting 1 record created; submit conflicting payload with same `externalId` asserting `409 Conflict`.
 
 ### Tests for User Story 2
-- [ ] T017 [P] [US2] Concurrency integration test with Testcontainers PostgreSQL verifying 10 parallel threads with same `externalId` result in exactly 1 record in `src/test/java/com/deroyque/activation/persistence/ActivationConcurrencyIntegrationTest.java`
+- [X] T017 [P] [US2] Concurrency integration test with Testcontainers PostgreSQL verifying 10 parallel threads with same `externalId` result in exactly 1 record in `src/test/java/com/deroyque/activation/persistence/ActivationConcurrencyIntegrationTest.java`
 
 ### Implementation for User Story 2
-- [ ] T018 [US2] Enhance `ActivationService.createActivation(...)` to intercept `DataIntegrityViolationException`, query existing record, and return idempotent `200 OK` on matching payload or throw `ActivationConflictException` on divergent payload
-- [ ] T019 [US2] Map `ActivationConflictException` in `GlobalExceptionHandler.java` to return RFC 9457 `409 Conflict` Problem Details
+- [X] T018 [US2] Enhance `ActivationService.createActivation(...)` to intercept `DataIntegrityViolationException`, query existing record, and return idempotent `200 OK` on matching payload or throw `ActivationConflictException` on divergent payload
+- [X] T019 [US2] Map `ActivationConflictException` in `GlobalExceptionHandler.java` to return RFC 9457 `409 Conflict` Problem Details
 
 **Checkpoint**: User Stories 1 AND 2 work together with verified concurrency safety
 
@@ -92,12 +92,12 @@ description: "Task list for Customer Product Activation Service implementation"
 **Independent Test**: Query `/api/v1/requests/{id}` for existing (`200 OK`) and non-existing (`404 Not Found`) IDs; execute filtered paginated queries against `/api/v1/requests?customerId=...&status=...`.
 
 ### Tests for User Story 3
-- [ ] T020 [P] [US3] Web slice test for `GET /api/v1/requests/{id}` and filtered pagination in `src/test/java/com/deroyque/activation/web/ActivationQueryControllerTest.java`
+- [X] T020 [P] [US3] Web slice test for `GET /api/v1/requests/{id}` and filtered pagination in `src/test/java/com/deroyque/activation/web/ActivationQueryControllerTest.java`
 
 ### Implementation for User Story 3
-- [ ] T021 [P] [US3] Implement `GetActivationUseCase`, `ListActivationsUseCase`, and `PaginatedResponseDto` in `src/main/java/com/deroyque/activation/application/port/in/` and `src/main/java/com/deroyque/activation/infrastructure/web/dto/`
-- [ ] T022 [US3] Implement pagination and specification query methods in `ActivationRepositoryPort` and `ActivationRepositoryAdapter`
-- [ ] T023 [US3] Implement `GET /api/v1/requests/{id}` and `GET /api/v1/requests` endpoints in `ActivationController.java`
+- [X] T021 [P] [US3] Implement `GetActivationUseCase`, `ListActivationsUseCase`, and `PaginatedResponseDto` in `src/main/java/com/deroyque/activation/application/port/in/` and `src/main/java/com/deroyque/activation/infrastructure/web/dto/`
+- [X] T022 [US3] Implement pagination and specification query methods in `ActivationRepositoryPort` and `ActivationRepositoryAdapter`
+- [X] T023 [US3] Implement `GET /api/v1/requests/{id}` and `GET /api/v1/requests` endpoints in `ActivationController.java`
 
 **Checkpoint**: Status query and paginated search fully functional
 
@@ -110,12 +110,12 @@ description: "Task list for Customer Product Activation Service implementation"
 **Independent Test**: Trigger activation against WireMock simulating 200, 400, 500, and timeout delays; verify status progression (`PENDING` -> `PROCESSING` -> `COMPLETED`/`FAILED`) and retry counter.
 
 ### Tests for User Story 4
-- [ ] T024 [P] [US4] WireMock integration test suite covering 200 OK, 400 Bad Request, 500 Server Error, and read timeout in `src/test/java/com/deroyque/activation/client/ExternalProviderClientIntegrationTest.java`
+- [X] T024 [P] [US4] WireMock integration test suite covering 200 OK, 400 Bad Request, 500 Server Error, and read timeout in `src/test/java/com/deroyque/activation/client/ExternalProviderClientIntegrationTest.java`
 
 ### Implementation for User Story 4
-- [ ] T025 [P] [US4] Implement Spring 6 `RestClient` external provider adapter with connect/read timeouts and `X-Idempotency-Key` header in `src/main/java/com/deroyque/activation/infrastructure/client/ExternalProviderClient.java`
-- [ ] T026 [US4] Implement `OutboxRepositoryPort`, `OutboxRepositoryAdapter`, and atomic outbox record creation inside `ActivationService.createActivation(...)`
-- [ ] T027 [US4] Implement `OutboxProcessorService` scheduled worker handling asynchronous dispatch, status transitions (`PROCESSING`, `COMPLETED`, `FAILED`), and exponential backoff retry in `src/main/java/com/deroyque/activation/application/service/OutboxProcessorService.java`
+- [X] T025 [P] [US4] Implement Spring 6 `RestClient` external provider adapter with connect/read timeouts and `X-Idempotency-Key` header in `src/main/java/com/deroyque/activation/infrastructure/client/ExternalProviderClient.java`
+- [X] T026 [US4] Implement `OutboxRepositoryPort`, `OutboxRepositoryAdapter`, and atomic outbox record creation inside `ActivationService.createActivation(...)`
+- [X] T027 [US4] Implement `OutboxProcessorService` scheduled worker handling asynchronous dispatch, status transitions (`PROCESSING`, `COMPLETED`, `FAILED`), and exponential backoff retry in `src/main/java/com/deroyque/activation/application/service/OutboxProcessorService.java`
 
 **Checkpoint**: Activation workflow reliably decoupled and resilient to downstream latency
 
@@ -128,10 +128,10 @@ description: "Task list for Customer Product Activation Service implementation"
 **Independent Test**: Send requests without token asserting 401; send request with read-only token to POST asserting 403; assert `/actuator/health` and `/actuator/metrics` return operational status.
 
 ### Tests for User Story 5
-- [ ] T028 [P] [US5] Security test suite verifying 401 Unauthorized and 403 Forbidden on write endpoint with read-only scope in `src/test/java/com/deroyque/activation/web/SecurityAccessTest.java`
+- [X] T028 [P] [US5] Security test suite verifying 401 Unauthorized and 403 Forbidden on write endpoint with read-only scope in `src/test/java/com/deroyque/activation/web/SecurityAccessTest.java`
 
 ### Implementation for User Story 5
-- [ ] T029 [US5] Configure Spring Boot Actuator endpoints, health indicators, Micrometer Prometheus metrics, and Logback JSON logging in `src/main/resources/`
+- [X] T029 [US5] Configure Spring Boot Actuator endpoints, health indicators, Micrometer Prometheus metrics, and Logback JSON logging in `src/main/resources/`
 
 **Checkpoint**: Security and observability gates enforced
 
@@ -141,12 +141,12 @@ description: "Task list for Customer Product Activation Service implementation"
 
 **Purpose**: Containerization, Architecture Decision Records, production incident post-mortem, and documentation
 
-- [ ] T030 [P] Create multi-stage, non-root `Dockerfile` with container-aware JVM settings in repository root
-- [ ] T031 [P] Create `docker-compose.yml` orchestrating Application, PostgreSQL, and WireMock external provider mock
-- [ ] T032 [P] Document Architecture Decision Records (`docs/adr/ADR-001-idempotency.md`, `docs/adr/ADR-002-outbox.md`, `docs/adr/ADR-003-error-handling.md`)
-- [ ] T033 [P] Document Production Incident Analysis (`docs/production-incident-analysis.md` answering all questions from challenge item 10)
-- [ ] T034 Create complete, comprehensive `README.md` containing all required challenge sections (How to run, Technical decisions, Production analysis, Production readiness, Pending points, Future improvements, AI usage)
-- [ ] T035 Execute full end-to-end verification via `./mvnw clean verify`
+- [X] T030 [P] Create multi-stage, non-root `Dockerfile` with container-aware JVM settings in repository root
+- [X] T031 [P] Create `docker-compose.yml` orchestrating Application, PostgreSQL, and WireMock external provider mock
+- [X] T032 [P] Document Architecture Decision Records (`docs/adr/ADR-001-idempotency.md`, `docs/adr/ADR-002-outbox.md`, `docs/adr/ADR-003-error-handling.md`)
+- [X] T033 [P] Document Production Incident Analysis (`docs/production-incident-analysis.md` answering all questions from challenge item 10)
+- [X] T034 Create complete, comprehensive `README.md` containing all required challenge sections (How to run, Technical decisions, Production analysis, Production readiness, Pending points, Future improvements, AI usage)
+- [X] T035 Execute full end-to-end verification via `./mvnw clean verify`
 
 ---
 

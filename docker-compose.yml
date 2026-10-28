@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: activation-postgres
+    environment:
+      POSTGRES_DB: activation_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d activation_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  provider-mock:
+    image: wiremock/wiremock:3.9.2
+    container_name: activation-provider-mock
+    ports:
+      - "8089:8080"
+    command: ["--global-response-templating"]
+    volumes:
+      - ./wiremock-stubs:/home/wiremock
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: activation-service
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/activation_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgrespassword
+      ACTIVATION_PROVIDER_URL: http://provider-mock:8080
+      JWT_ISSUER_URI: http://localhost:8081/realms/deroyque
+      SERVER_PORT: 8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:

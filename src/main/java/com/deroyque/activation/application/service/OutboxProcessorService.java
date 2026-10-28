@@ -71,7 +71,7 @@ public class OutboxProcessorService {
         }
 
         request.startProcessing();
-        activationRepository.save(request);
+        request = activationRepository.save(request);
 
         Map<?, ?> payloadMap;
         try {

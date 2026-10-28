@@ -28,7 +28,14 @@ public class ActivationRepositoryAdapter implements ActivationRepositoryPort {
 
     @Override
     public ActivationRequest save(ActivationRequest request) {
-        ActivationRequestEntity entity = ActivationRequestEntity.fromDomain(request);
+        ActivationRequestEntity entity = repository.findById(request.getId())
+                .map(existing -> {
+                    existing.setStatus(request.getStatus());
+                    existing.setFailureReason(request.getFailureReason());
+                    existing.setUpdatedAt(request.getUpdatedAt());
+                    return existing;
+                })
+                .orElseGet(() -> ActivationRequestEntity.fromDomain(request));
         ActivationRequestEntity saved = repository.save(entity);
         return saved.toDomain();
     }

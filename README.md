@@ -68,7 +68,26 @@ O projeto conta com suíte de testes multi-camadas (unitários puros de domínio
 
 ---
 
-### 1.5 Roteiro de Testes dos Endpoints da API
+### 1.5 Documentação Interativa (Swagger UI & OpenAPI 3.0)
+
+A aplicação conta com documentação interativa OpenAPI 3.0 gerada automaticamente pelo SpringDoc:
+
+- **Swagger UI (Navegador)**: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+- **Especificação OpenAPI JSON**: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+- **Especificação OpenAPI YAML**: [http://localhost:8080/v3/api-docs.yaml](http://localhost:8080/v3/api-docs.yaml)
+
+#### Como Testar os Endpoints Diretamente pelo Swagger UI:
+1. Acesse [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html) no seu navegador.
+2. Clique no botão verde **Authorize** (com ícone de cadeado) no canto superior direito.
+3. No campo `bearerAuth`, informe o token de desenvolvimento:
+   ```text
+   dev-token
+   ```
+4. Clique em **Authorize** e feche o modal. O Swagger UI anexará automaticamente o cabeçalho `Authorization: Bearer dev-token` a todas as requisições disparadas pelo botão "Try it out".
+
+---
+
+### 1.6 Roteiro de Testes dos Endpoints da API
 
 > **Autenticação no Perfil `dev`**: Para facilitar os testes locais sem exigir um servidor Keycloak/OAuth2 externo em execução, o perfil `dev` conta com um `devJwtDecoder` que aceita qualquer token Bearer (como `Bearer dev-token`) injetando automaticamente os escopos `SCOPE_activations:read` e `SCOPE_activations:write`.
 

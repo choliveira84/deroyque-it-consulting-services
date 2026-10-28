@@ -83,4 +83,16 @@ class SecurityAccessTest {
                         .with(jwt().authorities(new SimpleGrantedAuthority("SCOPE_activations:read"))))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("Documentation endpoints should permit unauthenticated access (not 401)")
+    void shouldPermitUnauthenticatedAccessToDocs() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(result -> org.assertj.core.api.Assertions.assertThat(result.getResponse().getStatus())
+                        .isNotEqualTo(401));
+
+        mockMvc.perform(get("/swagger-ui.html"))
+                .andExpect(result -> org.assertj.core.api.Assertions.assertThat(result.getResponse().getStatus())
+                        .isNotEqualTo(401));
+    }
 }

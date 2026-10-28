@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/provider/v1/activate"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"activationCode\": \"ACT-SUCCESS-123\", \"status\": \"ACTIVATED\"}"
+  }
+}

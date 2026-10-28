@@ -1,0 +1,65 @@
+openapi: 3.0.3
+info:
+  title: External Activation Provider API
+  version: 1.0.0
+  description: External downstream provider activation endpoint contract.
+paths:
+  /provider/v1/activate:
+    post:
+      summary: Execute external product activation
+      operationId: activateProduct
+      parameters:
+        - name: X-Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - customerId
+                - productCode
+              properties:
+                customerId:
+                  type: string
+                productCode:
+                  type: string
+      responses:
+        '200':
+          description: Product successfully activated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  activationCode:
+                    type: string
+                  status:
+                    type: string
+                    example: ACTIVATED
+        '400':
+          description: Business rejection / Invalid customer or product
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorCode:
+                    type: string
+                    example: INVALID_PRODUCT
+                  message:
+                    type: string
+        '500':
+          description: Internal provider server error
+        '503':
+          description: Service Unavailable / Overloaded
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                example: 10

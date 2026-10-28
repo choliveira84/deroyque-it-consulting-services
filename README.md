@@ -6,33 +6,184 @@ A solução prioriza simplicidade, clareza e separação de responsabilidades (A
 
 ---
 
-## 1. Como Executar
+## 1. Como Executar e Testar
 
 ### 1.1 Pré-requisitos
 - **Java 21** JDK instalado
-- **Docker** e **Docker Compose** (para Testcontainers e ambiente completo)
+- **Docker** e **Docker Compose** (para testes com banco real e execução dos contêineres)
 
-### 1.2 Build e Execução de Todos os Testes
-O projeto inclui o wrapper do Maven (`mvnw`), permitindo compilação e execução de toda a suíte de testes (unitários, concorrência com PostgreSQL real via Testcontainers, mocks remotos com WireMock e regras de arquitetura com ArchUnit) com um único comando:
+---
 
-```bash
-# No Linux/macOS:
-./mvnw clean verify
+### 1.2 Opção A: Subir o Ambiente Completo via Docker Compose (Recomendado)
 
-# No Windows PowerShell:
-.\mvnw.cmd clean verify
-```
+O arquivo `docker-compose.yml` orquestra todos os serviços necessários para rodar e testar a solução de ponta a ponta:
+- **`postgres`**: PostgreSQL 16 (porta `5432`).
+- **`provider-mock`**: WireMock (porta `8089`) com stubs pré-configurados em `wiremock-stubs/mappings/` para simular o provedor externo com sucesso (`200 OK`).
+- **`app`**: A aplicação Spring Boot construída via Dockerfile multi-stage (porta `8080`), com perfil `dev` ativo.
 
-### 1.3 Execução com Docker Compose
-Para inicializar toda a infraestrutura local (Aplicação + PostgreSQL 16 + Mock do Provedor Externo WireMock):
-
+#### 1. Iniciar os contêineres
+Na raiz do repositório, execute:
 ```bash
 docker compose up -d --build
 ```
 
-Acesse o health check da aplicação:
+#### 2. Verificar o status dos contêineres
+```bash
+docker compose ps
+```
+
+#### 3. Verificar o Health Check da aplicação
 ```bash
 curl http://localhost:8080/actuator/health
+```
+> **Resposta esperada:** `{"status":"UP","groups":["liveness","readiness"]}`
+
+---
+
+### 1.3 Opção B: Executar Localmente via Maven
+
+Para rodar a aplicação diretamente no host (com o PostgreSQL rodando localmente na porta 5432):
+
+```powershell
+# No Windows PowerShell:
+.\mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=dev
+
+# No Linux/macOS:
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+---
+
+### 1.4 Como Executar os Testes Automatizados
+
+O projeto conta com suíte de testes multi-camadas (unitários puros de domínio, concorrência com banco real via Testcontainers, mocks remotos com WireMock e regras arquiteturais com ArchUnit):
+
+```powershell
+# No Windows PowerShell:
+.\mvnw.cmd clean verify
+
+# No Linux/macOS:
+./mvnw clean verify
+```
+
+---
+
+### 1.5 Roteiro de Testes dos Endpoints da API
+
+> **Autenticação no Perfil `dev`**: Para facilitar os testes locais sem exigir um servidor Keycloak/OAuth2 externo em execução, o perfil `dev` conta com um `devJwtDecoder` que aceita qualquer token Bearer (como `Bearer dev-token`) injetando automaticamente os escopos `SCOPE_activations:read` e `SCOPE_activations:write`.
+
+#### 1. Criar Solicitação de Ativação (`POST /api/v1/requests`)
+```bash
+curl -i -X POST http://localhost:8080/api/v1/requests \
+  -H "Authorization: Bearer dev-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "externalId": "EXT-10001",
+    "customerId": "CUST-9901",
+    "productCode": "INTERNET-500"
+  }'
+```
+
+**Resposta esperada (`201 Created`):**
+```http
+HTTP/1.1 201 Created
+Location: http://localhost:8080/api/v1/requests/d3b07384-d113-4ec6-8968-36a46dc49f50
+X-Correlation-Id: a3f88921820...
+Content-Type: application/json
+
+{
+  "id": "d3b07384-d113-4ec6-8968-36a46dc49f50",
+  "externalId": "EXT-10001",
+  "customerId": "CUST-9901",
+  "productCode": "INTERNET-500",
+  "status": "PENDING",
+  "createdAt": "2026-10-28T18:50:00Z",
+  "updatedAt": "2026-10-28T18:50:00Z"
+}
+```
+
+> **Processamento Assíncrono**: O serviço grava o registro com status `PENDING` e o evento de outbox em menos de 10 ms. Em segundo plano, o `OutboxProcessorService` despacha para o provedor externo e atualiza o status para `COMPLETED`.
+
+---
+
+#### 2. Testar Idempotência (Mesmo `externalId`, Mesmo Payload)
+Reenvie a mesma requisição com o mesmo `externalId` e dados idênticos:
+```bash
+curl -i -X POST http://localhost:8080/api/v1/requests \
+  -H "Authorization: Bearer dev-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "externalId": "EXT-10001",
+    "customerId": "CUST-9901",
+    "productCode": "INTERNET-500"
+  }'
+```
+
+**Resposta esperada (`200 OK` - Idempotente):**
+Retorna `200 OK` com o registro existente, sem criar duplicidades no banco de dados.
+
+---
+
+#### 3. Testar Conflito (Mesmo `externalId`, Payload Divergente)
+Envie o mesmo `externalId`, porém alterando o `productCode`:
+```bash
+curl -i -X POST http://localhost:8080/api/v1/requests \
+  -H "Authorization: Bearer dev-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "externalId": "EXT-10001",
+    "customerId": "CUST-9901",
+    "productCode": "OUTRO-PRODUTO"
+  }'
+```
+
+**Resposta esperada (`409 Conflict` - Problem Details RFC 9457):**
+```json
+{
+  "type": "https://api.deroyque.com/problems/conflict",
+  "title": "Request Conflict",
+  "status": 409,
+  "detail": "Conflict on activation with externalId 'EXT-10001': An activation request with this externalId already exists with divergent productCode or customerId",
+  "instance": "/api/v1/requests",
+  "traceId": "9f21b7..."
+}
+```
+
+---
+
+#### 4. Consultar Solicitação por ID (`GET /api/v1/requests/{id}`)
+Substitua pelo UUID retornado na criação da solicitação:
+```bash
+curl -X GET http://localhost:8080/api/v1/requests/d3b07384-d113-4ec6-8968-36a46dc49f50 \
+  -H "Authorization: Bearer dev-token"
+```
+
+**Resposta esperada (`200 OK`):**
+```json
+{
+  "id": "d3b07384-d113-4ec6-8968-36a46dc49f50",
+  "externalId": "EXT-10001",
+  "customerId": "CUST-9901",
+  "productCode": "INTERNET-500",
+  "status": "COMPLETED",
+  "createdAt": "2026-10-28T18:50:00Z",
+  "updatedAt": "2026-10-28T18:50:02Z"
+}
+```
+
+---
+
+#### 5. Listar Solicitações com Paginação e Filtros (`GET /api/v1/requests`)
+```bash
+curl -X GET "http://localhost:8080/api/v1/requests?customerId=CUST-9901&status=COMPLETED&page=0&size=10" \
+  -H "Authorization: Bearer dev-token"
+```
+
+---
+
+#### 6. Encerrar os Serviços do Docker Compose
+```bash
+docker compose down
 ```
 
 ---
@@ -41,7 +192,7 @@ curl http://localhost:8080/actuator/health
 
 ### 2.1 Estratégia contra Duplicidade e Concorrência (Item 3 do Desafio)
 - **Garantia no Banco**: A verificação prévia no banco (`if (!exists)`) é insuficiente isoladamente devido à condição de corrida (TOCTOU). Criamos uma constraint única obrigatória (`uk_activation_requests_external_id`) no PostgreSQL.
-- **Tratamento de Colisão Concorrente**: Se duas requisições com o mesmo `externalId` chegarem no mesmo milissegundo, uma é persistida com sucesso e a outra tem a exceção `DataIntegrityViolationException` capturada, recuperando a entidade existente e resolvendo o fluxo de forma segura.
+- **Tratamento de Colisão Concorrente**: Se duas requisições com o mesmo `externalId` chegarem no mesmo milissegundo, uma é persistida com sucesso e a outra tem a exceção `DataIntegrityViolationException` capturada em sub-transação isolada (`REQUIRES_NEW`), recuperando a entidade existente e resolvendo o fluxo de forma segura sem corromper a sessão do Hibernate.
 - **Semântica HTTP para Repetição**:
   - **Retry Legítimo (mesmo externalId, mesmo payload)**: Retorna `200 OK` com os dados do registro existente (ou `201 Created` na primeira requisição), garantindo idempotência total.
   - **Payload Conflitante (mesmo externalId, payload divergente)**: Retorna `409 Conflict` (Problem Details RFC 9457) explicitando que o `externalId` já está associado a outro cliente ou produto.

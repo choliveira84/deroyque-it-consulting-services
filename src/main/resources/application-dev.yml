@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: product-activation-service-dev
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/activation_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgrespassword}
+
+activation:
+  provider:
+    base-url: ${ACTIVATION_PROVIDER_URL:http://localhost:8089}
+
+logging:
+  level:
+    com.deroyque.activation: DEBUG

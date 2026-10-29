@@ -21,6 +21,10 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  servlet:
+    multipart:
+      max-file-size: 1MB
+      max-request-size: 1MB
   security:
     oauth2:
       resourceserver:
@@ -30,6 +34,9 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
   shutdown: graceful
+  tomcat:
+    max-http-form-post-size: 1MB
+    max-swallow-size: 2MB
 
 activation:
   provider:

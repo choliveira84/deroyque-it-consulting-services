@@ -219,23 +219,47 @@ docker compose down
   - **Payload Conflitante (mesmo externalId, payload divergente)**: Retorna `409 Conflict` (Problem Details RFC 9457) explicitando que o `externalId` já está associado a outro cliente ou produto.
 - **Bloqueio Otimista**: A entidade JPA utiliza a anotação `@Version` para blindar atualizações concorrentes de status.
 
+#### 2.1.1 Estratégia de Indexação e Desempenho no PostgreSQL (Diferencial)
+Para garantir alta performance e escalabilidade nas consultas paginadas e no processamento assíncrono, a migração Flyway cria índices B-Tree estrategicamente projetados:
+1. **Índice Composto `idx_activation_requests_cust_status` em `(customer_id, status)`**:
+   - **Regra de Seletividade e Cardinalidade**: A coluna com maior cardinalidade (`customer_id`, com milhares de valores distintos) precede a de baixa cardinalidade (`status`, com apenas 4 valores possíveis: `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`).
+   - Isso permite que o PostgreSQL reduza imediatamente o espaço de busca para dezenas de tuplas antes de avaliar o status, executando um *Index Scan* de custo $O(\log N)$ em vez de um *Sequential Scan*.
+   - **Prefix Matching**: Por estar na primeira posição do índice, pesquisas que filtram apenas por `customer_id` também utilizam esse mesmo índice, dispensando a sobrecarga de um índice redundante.
+2. **Índice Simples `idx_activation_requests_created_at` em `(created_at DESC)`**:
+   - **Prevenção de Filesort**: A listagem paginada padrão ordena por data decrescente. Sem esse índice, o banco realizaria um *Quicksort* em memória ou disco (*filesort*) sobre todo o resultado antes de aplicar o `LIMIT 20`. Com o índice, o PostgreSQL percorre o B-Tree e interrompe a leitura no 20º item.
+3. **Índice da Tabela de Outbox `idx_outbox_status_next_retry` em `(status, next_retry_at)`**:
+   - O worker de polling assíncrono consulta periodicamente eventos com `status IN ('PENDING', 'PROCESSING') AND next_retry_at <= NOW()`. Esse índice composto permite recuperar as mensagens pendentes instantaneamente, ignorando milhões de eventos `COMPLETED` históricos.
+
 ### 2.2 Desacoplamento Transacional e Integração Externa (Item 5 do Desafio)
 - **Transactional Outbox Pattern**: Chamadas HTTP para `POST /provider/v1/activate` **nunca** ocorrem dentro de transações de banco de dados abertas. A solicitação de ativação e a mensagem de outbox são gravadas atomicamente em menos de 10 ms. O despacho ao provedor externo é executado de forma assíncrona desacoplada (`OutboxProcessorService`).
 - **Resiliência e Idempotência no Provedor**:
   - Envio de cabeçalho `X-Idempotency-Key` único por tentativa para evitar ativações duplicadas em cenários de retry após timeout.
   - Timeouts explícitos configurados no `RestClient` (1s connect timeout, 3s read timeout).
   - Máquina de estados: `PENDING` → `PROCESSING` → `COMPLETED` / `FAILED`.
-  - Tratamento por retorno:
-    - **2xx (Sucesso)**: `COMPLETED` imediato.
-    - **400 (Bad Request)**: `FAILED` sem nova tentativa (erro de negócio no provedor).
-    - **500 / Timeout**: Permanência em `PROCESSING` com retry exponencial e jitter (até 3 tentativas); após o limite, transiciona para `FAILED`.
+
+#### 2.2.1 Matriz de Comportamento por Retorno do Provedor (Diferencial)
+Em conformidade com as diretrizes do desafio, o comportamento do serviço para cada resposta do provedor externo segue a matriz abaixo:
+
+| Retorno do Provedor | Novo Status na API | Nova Tentativa? | Justificativa Técnica |
+|---|---|---|---|
+| **Sucesso (2xx)** | `COMPLETED` | Não | Ativação confirmada pelo parceiro externo com código de ativação. |
+| **HTTP 400 (Bad Request)** | `FAILED` | Não | Erro de regra de negócio no parceiro (SKU inválido, dados incorretos). Tentar novamente geraria o mesmo erro e desperdiçaria recursos de rede/banco. |
+| **HTTP 500 (Internal Server Error)** | Permanece `PROCESSING` | Sim (até 3x) | Falha transitória de infraestrutura no parceiro. Aplicamos retry com backoff exponencial e jitter aleatório. Ao esgotar 3 tentativas, transiciona para `FAILED`. |
+| **Timeout (Conexão ou Leitura)** | Permanece `PROCESSING` | Sim (até 3x) | Falha na rede onde o resultado é ambíguo (o provedor pode ter processado ou não). Graças ao cabeçalho `X-Idempotency-Key`, a retransmissão é segura e idempotente. |
+| **HTTP 429 / 503 com `Retry-After` (Diferencial)** | Permanece `PROCESSING` | Sim (respeitando header) | O parceiro está sob sobrecarga temporária (throttling) ou em janela de manutenção. Respeitamos o delay explícito do header `Retry-After` (em segundos ou data HTTP) acrescido de jitter (±10%) para evitar o **Thundering Herd Problem** (enxurrada sincronizada de clientes). |
+
+- **Prevenção de Thundering Herd e Jitter**: Em cenários de retry, somamos uma variação aleatória de tempo (jitter) ao intervalo base para evitar que múltiplas solicitações bloqueadas tentem reconectar simultaneamente no mesmo milissegundo.
 
 ### 2.3 Tratamento de Erros e Segurança (Itens 6 e 7 do Desafio)
 - **RFC 9457 (Problem Details)**: Todas as respostas de erro seguem o padrão `application/problem+json` suportado nativamente pelo Spring 6 (`ProblemDetail`), enriquecidas com `traceId` correlacionado via MDC. Nenhum stack trace ou detalhe interno é exposto ao consumidor.
 - **Segurança (Spring Security como Resource Server)**:
   - Autenticação stateless baseada em tokens JWT (validando assinatura, emissor, audiência e expiração).
   - Autorização segregada por escopos: `SCOPE_activations:write` para `POST /api/v1/requests` e `SCOPE_activations:read` para consultas `GET`.
-  - Proteção contra BOLA (Broken Object Level Authorization) preparada a nível de domínio.
+- **Proteção contra BOLA (Broken Object Level Authorization - OWASP Top 10 #1)**:
+  - Em endpoints de consulta (`GET /api/v1/requests/{id}`), a aplicação valida se o `customerId` do registro pertence ao mesmo tenant identificado no token JWT (`sub` ou claim de organização), retornando `403 Forbidden` ou `404 Not Found` caso o cliente tente acessar dados de outros consumidores.
+- **Proteção de Borda: Limites de Payload e Rate Limiting (Diferencial)**:
+  - **Tamanho Máximo de Requisições**: Configurado no Spring Boot / Tomcat (`max-http-form-post-size: 1MB`, `max-request-size: 1MB`) para blindar o serviço contra ataques de negação de serviço por exaustão de memória heap (*Memory Exhaustion DoS*).
+  - **Rate Limiting**: Arquitetura preparada para estrangulamento via algoritmo **Token Bucket** no API Gateway (Kong / AWS WAF / Spring Cloud Gateway) ou Bucket4j, estabelecendo cotas por cliente/IP (ex.: 100 requisições/minuto) com retorno `429 Too Many Requests`.
 
 ---
 
